@@ -1,0 +1,19 @@
+{
+  "name": "qtfunctionallib",
+  "version": "1.0.0",
+  "description": "Useful additions to JS prototypes to facilliate functional style.\"",
+  "main": "qtFunctionalLib.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tqwhite/qtFunctionalLib.git"
+  },
+  "author": "TQ White II",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tqwhite/qtFunctionalLib/issues"
+  },
+  "homepage": "https://github.com/tqwhite/qtFunctionalLib#readme"
+}
