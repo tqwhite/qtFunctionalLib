@@ -1,18 +1,73 @@
-/*
-	Array Remove - By John Resig (MIT Licensed)
-	http://ejohn.org/blog/javascript-array-remove/
-	Remove the second item from the array
-		array.remove(1);
-	Remove the second-to-last item from the array
-		array.remove(-2);
-	Remove the second and third items from the array
-		array.remove(1,2);
-	Remove the last and second-to-last items from the array
-		array.remove(-2,-1);
-*/
+const commonFunctions = {
+	toType: function(obj) {
+		if (obj === null) {
+			return 'null';
+		} else if (typeof obj == 'undefined') {
+			return 'undefined';
+		} else {
+			return {}.toString
+				.call(obj)
+				.match(/\s([a-z|A-Z]+)/)[1]
+				.toLowerCase();
+		}
+	},
 
-const docList = [
-];
+	byObjectProperty: function(fieldName, transformer) {
+		//called: resultArray=someArray.sort(qtools.byObjectProperty('somePropertyName'));
+		//based on closure of fieldName
+		var fullNameSort;
+		return (fullNameSort = function(a, b) {
+			var localFieldName = fieldName;
+			var localTransformer = transformer;
+			//for debug
+			if (typeof fieldName == 'function') {
+				var aa = a;
+				var bb = b;
+				transformer = fieldName;
+			} else {
+				var aa = a.qtGetSurePath(fieldName);
+				var bb = b.qtGetSurePath(fieldName);
+			}
+
+			if (typeof transformer == 'function') {
+				aa = transformer(aa);
+				bb = transformer(bb);
+			} else if (transformer) {
+				switch (transformer) {
+					case 'caseInsensitive':
+						aa = aa.toLowerCase();
+						bb = bb.toLowerCase();
+						break;
+					default:
+						console.log(
+							'qt.byObjectProperty says, No such transformer as: ' + transformer
+						);
+						break;
+				}
+			}
+
+			if (!bb && !aa) {
+				return 0;
+			}
+			if (!bb) {
+				return -1;
+			}
+			if (!aa) {
+				return 1;
+			}
+
+			if (aa > bb) {
+				return 1;
+			}
+			if (aa < bb) {
+				return -1;
+			}
+			return 0;
+		});
+	}
+};
+
+const docList = [];
 
 // Array.prototype.remove = function(from, to) {
 // 	var rest = this.slice((to || from) + 1 || this.length);
@@ -40,27 +95,51 @@ String.prototype.toCamelCase = function(delimiter, pascalCase) {
 };
 
 const addMorePrototypes = (qtools, updatePrototypes) => {
-	if (true) {
-		String.prototype.qtReplace = function(parmSet) {
-			parmSet.template = this;
-			if (parmSet.replaceArray) {
-				return qtools.templateReplaceArray(parmSet);
-			} else {
-				return qtools.templateReplace(parmSet);
-			}
-		};
-		docList.push('String.prototype.qtReplace(templateReplaceArgs)');
+	// 	if (true) {
+	// 		String.prototype.qtReplace = function(parmSet) {
+	// 			parmSet.template = this;
+	// 			if (parmSet.replaceArray) {
+	// 				return qtools.templateReplaceArray(parmSet);
+	// 			} else {
+	// 				return qtools.templateReplace(parmSet);
+	// 			}
+	// 		};
 
-docList.push(require('./lib/qtools-number-iterator').addToPrototype());
-docList.push(require('./lib/qtools-includes-regex').addToPrototype('qtIncludesRegex'));
-docList.push(require('./lib/qtools-to-string').addToPrototype('qtToString'));
-docList.push(require('./lib/qtools-number-keys-to-array').addToPrototype('qtNumberKeysToArray'));
-	}
+	docList.push('String.prototype.qtReplace(templateReplaceArgs)');
+	docList.push(
+		require('./lib/qtools-number-iterator').addToPrototype(
+			'qtools-number-iterator'
+		)
+	);
+	docList.push(
+		require('./lib/qtools-includes-regex').addToPrototype('qtIncludesRegex')
+	);
+	docList.push(require('./lib/qtools-to-string').addToPrototype('qtToString'));
+	docList.push(
+		require('./lib/qtools-number-keys-to-array').addToPrototype(
+			'qtNumberKeysToArray'
+		)
+	);
+	docList.push(
+		require('./lib/qtools-object-sure-path').addToPrototype(
+			'qtObjectSurePath',
+			commonFunctions
+		)
+	);
+	docList.push(
+		require('./lib/qtools-print-debug').addToPrototype(
+			'qtPrintDebug',
+			commonFunctions
+		)
+	);
 };
 
 addMorePrototypes();
 
 module.exports = {
-	descriptions:docList.map(item=>item && item.description),
-	names:docList.map(item=>item && item.name)
+	descriptions: docList.map(item => item && item.description),
+	methods: docList.map(
+		item => (item.methods ? item.methods.join(', ').replace(/, $/, '') : 'n/a')
+	)
 };
+
