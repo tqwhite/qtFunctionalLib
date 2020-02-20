@@ -1,4 +1,13 @@
 const commonFunctions = {
+
+callerName:(calledFromQtLib=false)=>{
+		const index=calledFromQtLib?3:1; //the 1 might need adjusting once this is made available to applications
+		return new Error().stack
+				.split(/at/)[3]
+				.trim()
+				.replace(/Object\.<anonymous>/, 'not_in_function');
+				},
+				
 	toType: function(obj) {
 		if (obj === null) {
 			return 'null';
