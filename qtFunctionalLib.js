@@ -1,13 +1,12 @@
 const commonFunctions = {
-
-callerName:(calledFromQtLib=false)=>{
-		const index=calledFromQtLib?3:1; //the 1 might need adjusting once this is made available to applications
+	callerName: (calledFromQtLib = false) => {
+		const index = calledFromQtLib ? 3 : 1; //the 1 might need adjusting once this is made available to applications
 		return new Error().stack
-				.split(/at/)[3]
-				.trim()
-				.replace(/Object\.<anonymous>/, 'not_in_function');
-				},
-				
+			.split(/at/)[3]
+			.trim()
+			.replace(/Object\.<anonymous>/, 'not_in_function');
+	},
+
 	toType: function(obj) {
 		if (obj === null) {
 			return 'null';
@@ -113,17 +112,17 @@ const addMorePrototypes = (qtools, updatePrototypes) => {
 	// 				return qtools.templateReplace(parmSet);
 	// 			}
 	// 		};
-
-	docList.push('String.prototype.qtReplace(templateReplaceArgs)');
+	// 
+	// 	docList.push('String.prototype.qtReplace(templateReplaceArgs)');
 	docList.push(
 		require('./lib/qtools-number-iterator').addToPrototype(
 			'qtools-number-iterator'
 		)
 	);
 	docList.push(
-		require('./lib/qtools-includes-regex').addToPrototype('qtIncludesRegex')
+		require('./lib/qtools-includes-regex').addToPrototype()
 	);
-	docList.push(require('./lib/qtools-to-string').addToPrototype('qtToString'));
+	docList.push(require('./lib/qtools-to-string').addToPrototype());
 	docList.push(
 		require('./lib/qtools-number-keys-to-array').addToPrototype(
 			'qtNumberKeysToArray'
@@ -145,10 +144,25 @@ const addMorePrototypes = (qtools, updatePrototypes) => {
 
 addMorePrototypes();
 
-module.exports = {
-	descriptions: docList.map(item => item && item.description),
-	methods: docList.map(
-		item => (item.methods ? item.methods.join(', ').replace(/, $/, '') : 'n/a')
-	)
-};
+const helpActual=commonFunctions=>(queryString='')=>{
+	let outList;
+	if (!queryString){
+		outList=docList
+	}
+	else{
+	
+		outList=docList.filter(item=>{
+		
+		const regex=new RegExp(queryString, 'i');
+
+			return item.methods.qtIncludesRegex(regex);
+		});
+	
+	}
+	console.dir(outList);
+	
+}
+
+commonFunctions.help=helpActual(docList);
+module.exports = commonFunctions;
 
