@@ -1,4 +1,41 @@
 const commonFunctions = {
+	universalAddToPrototype: (commonFunctions, functionObject) => {
+			let methods = [];
+			let documentation = [];
+			let methodName;
+		functionObject.forEach((functionItem, inx) => {
+
+			methodName = inx;
+
+			const supportedTypeList = functionItem.supportedTypeList
+				.map(item => item.toString().replace(/^function (.*?)\(.*$/, '$1'))
+				.join(', ')
+				.replace(/, $/, '');
+
+			methods.push(methodName);
+			documentation.push({
+				name: methodName,
+				description: `${methodName}: ${functionItem.description}`,
+				supportedTypeList
+			});
+
+			functionItem.supportedTypeList.forEach(target => {
+				if (typeof target.prototype[methodName] == 'undefined') {
+					Object.defineProperty(target.prototype, methodName, {
+						value: functionItem.method(commonFunctions),
+						writable: false,
+						enumerable: false
+					});
+				}
+			});
+		});
+
+			return {
+				methods,
+				documentation
+			};
+	},
+
 	callerName: (calledFromQtLib = false) => {
 		const index = calledFromQtLib ? 3 : 1; //the 1 might need adjusting once this is made available to applications
 		return new Error().stack
@@ -75,8 +112,6 @@ const commonFunctions = {
 	}
 };
 
-const docList = [];
-
 // Array.prototype.remove = function(from, to) {
 // 	var rest = this.slice((to || from) + 1 || this.length);
 // 	this.length = from < 0 ? this.length + from : from;
@@ -102,67 +137,42 @@ String.prototype.toCamelCase = function(delimiter, pascalCase) {
 		.replace(/^(.)/, firstCharFunction);
 };
 
-const addMorePrototypes = (qtools, updatePrototypes) => {
-	// 	if (true) {
-	// 		String.prototype.qtReplace = function(parmSet) {
-	// 			parmSet.template = this;
-	// 			if (parmSet.replaceArray) {
-	// 				return qtools.templateReplaceArray(parmSet);
-	// 			} else {
-	// 				return qtools.templateReplace(parmSet);
-	// 			}
-	// 		};
-	// 
-	// 	docList.push('String.prototype.qtReplace(templateReplaceArgs)');
-	docList.push(
-		require('./lib/qtools-number-iterator').addToPrototype(
-			'qtools-number-iterator'
-		)
-	);
-	docList.push(
-		require('./lib/qtools-includes-regex').addToPrototype()
-	);
-	docList.push(require('./lib/qtools-to-string').addToPrototype());
-	docList.push(
-		require('./lib/qtools-number-keys-to-array').addToPrototype(
-			'qtNumberKeysToArray'
-		)
-	);
-	docList.push(
-		require('./lib/qtools-object-sure-path').addToPrototype(
-			'qtObjectSurePath',
-			commonFunctions
-		)
-	);
-	docList.push(
-		require('./lib/qtools-print-debug').addToPrototype(
-			'qtPrintDebug',
-			commonFunctions
-		)
-	);
+const docList = [];
+const addMorePrototypes = () => {
+	const fs = require('fs');
+	const path = require('path');
+	const libDir = path.join(path.dirname(module.filename), 'lib');
+	const dirList = fs.readdirSync(libDir);
+
+	dirList.forEach(item => {
+		if (item.match(/^qtools/)) {
+		
+			docList.push(
+				require(path.join(libDir, item)).addToPrototype(commonFunctions)
+			);
+		}
+	});
 };
 
 addMorePrototypes();
 
-const helpActual=commonFunctions=>(queryString='')=>{
+const helpActual = commonFunctions => (queryString = '') => {
 	let outList;
-	if (!queryString){
-		outList=docList
-	}
-	else{
-	
-		outList=docList.filter(item=>{
-		
-		const regex=new RegExp(queryString, 'i');
-
-			return item.methods.qtIncludesRegex(regex);
+	if (!queryString) {
+		outList = docList;
+	} else {
+		outList = docList.filter(item => {
+			const regex = new RegExp(queryString, 'i');
+			const result=JSON.stringify(item).match(regex);
+			return result;
 		});
-	
 	}
-	console.dir(outList);
-	
-}
+// 	const util=require('util');
+// 	util.inspect(docList, { depth: null, maxArrayLength: null }).qtDump('qtFuncionalLib Documentation');
+return outList;
 
-commonFunctions.help=helpActual(docList);
+};
+
+commonFunctions.help = helpActual(docList);
 module.exports = commonFunctions;
 
