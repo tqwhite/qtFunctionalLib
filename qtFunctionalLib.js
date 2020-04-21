@@ -6,7 +6,7 @@ const commonFunctions = {
 		functionObject.forEach((functionItem, inx) => {
 
 			methodName = inx;
-
+			
 			const supportedTypeList = functionItem.supportedTypeList
 				.map(item => item.toString().replace(/^function (.*?)\(.*$/, '$1'))
 				.join(', ')
@@ -45,16 +45,44 @@ const commonFunctions = {
 	},
 
 	toType: function(obj) {
+
+
+		if (obj instanceof Map){
+			return 'map';
+		}
+		if (obj instanceof Set){
+			return 'set';
+		}
+		
+		if (typeof obj == 'string') {
+			return 'string';
+		} 
+		
+		if (typeof obj == 'number') {
+			return 'number';
+		} 
+		
+		if (typeof obj == 'obj' && typeof(length)=='number') {
+			return 'array';
+		} 
+	
 		if (obj === null) {
 			return 'null';
-		} else if (typeof obj == 'undefined') {
+		}
+		
+		if (typeof obj == 'undefined') {
 			return 'undefined';
-		} else {
+		} 
+		
+		if (typeof obj == 'string') {
+			return 'string';
+		} 
+		
 			return {}.toString
 				.call(obj)
 				.match(/\s([a-z|A-Z]+)/)[1]
 				.toLowerCase();
-		}
+		
 	},
 
 	byObjectProperty: function(fieldName, transformer) {
@@ -109,7 +137,13 @@ const commonFunctions = {
 			}
 			return 0;
 		});
-	}
+	},
+	
+	
+	isSupportedType : (input, supportedTypeList) =>
+		supportedTypeList.reduce((result, supportedTypeItem) => {
+			return result || Object.getPrototypeOf(input) === supportedTypeItem.prototype; //instoanceof does not work for strings and numbers
+		}, false)
 };
 
 // Array.prototype.remove = function(from, to) {
@@ -146,9 +180,10 @@ const addMorePrototypes = () => {
 
 	dirList.forEach(item => {
 		if (item.match(/^qtools/)) {
-		
+			const moduleGen=require(path.join(libDir, item))
+			const module=new moduleGen({commonFunctions});
 			docList.push(
-				require(path.join(libDir, item)).addToPrototype(commonFunctions)
+				module.addToPrototype()
 			);
 		}
 	});
