@@ -1,16 +1,20 @@
 const commonFunctions = {
 	universalAddToPrototype: (commonFunctions, functionObject) => {
-			let methods = [];
-			let documentation = [];
-			let methodName;
+		let methods = [];
+		let documentation = [];
+		let methodName;
+		let testList = [];
 		functionObject.forEach((functionItem, inx) => {
-
 			methodName = inx;
-			
+
 			const supportedTypeList = functionItem.supportedTypeList
 				.map(item => item.toString().replace(/^function (.*?)\(.*$/, '$1'))
 				.join(', ')
 				.replace(/, $/, '');
+
+			if (functionItem.test && typeof functionItem.test == 'function') {
+				testList.push({ methodName, test: functionItem.test });
+			}
 
 			methods.push(methodName);
 			documentation.push({
@@ -30,10 +34,18 @@ const commonFunctions = {
 			});
 		});
 
-			return {
-				methods,
-				documentation
-			};
+		const test = ({ logErrors = false }) => {
+			const tmp = testList.reduce((passingTests, testItem, inx) => {
+				return passingTests && testItem.test({ logErrors, methodName:testItem.methodName }) ? true : false;
+			}, true);
+			return tmp;
+		};
+
+		return {
+			methods,
+			documentation,
+			test
+		};
 	},
 
 	callerName: (calledFromQtLib = false) => {
@@ -45,44 +57,42 @@ const commonFunctions = {
 	},
 
 	toType: function(obj) {
-
-
-		if (obj instanceof Map){
+		
+		if (obj instanceof Map) {
 			return 'map';
 		}
-		if (obj instanceof Set){
+		if (obj instanceof Set) {
 			return 'set';
 		}
-		
+
 		if (typeof obj == 'string') {
 			return 'string';
-		} 
-		
+		}
+
 		if (typeof obj == 'number') {
 			return 'number';
-		} 
-		
-		if (typeof obj == 'obj' && typeof(length)=='number') {
+		}
+
+		if (typeof obj == 'obj' && typeof length == 'number') {
 			return 'array';
-		} 
-	
+		}
+		
 		if (obj === null) {
 			return 'null';
 		}
-		
+
 		if (typeof obj == 'undefined') {
 			return 'undefined';
-		} 
-		
+		}
+
 		if (typeof obj == 'string') {
 			return 'string';
-		} 
-		
-			return {}.toString
-				.call(obj)
-				.match(/\s([a-z|A-Z]+)/)[1]
-				.toLowerCase();
-		
+		}
+
+		return {}.toString
+			.call(obj)
+			.match(/\s([a-z|A-Z]+)/)[1]
+			.toLowerCase();
 	},
 
 	byObjectProperty: function(fieldName, transformer) {
@@ -140,9 +150,11 @@ const commonFunctions = {
 	},
 	
 	
-	isSupportedType : (input, supportedTypeList) =>
+	isSupportedType: (input, supportedTypeList) =>
 		supportedTypeList.reduce((result, supportedTypeItem) => {
-			return result || Object.getPrototypeOf(input) === supportedTypeItem.prototype; //instoanceof does not work for strings and numbers
+			return (
+				result || Object.getPrototypeOf(input) === supportedTypeItem.prototype
+			); //instoanceof does not work for strings and numbers
 		}, false)
 };
 
@@ -172,6 +184,8 @@ String.prototype.toCamelCase = function(delimiter, pascalCase) {
 };
 
 const docList = [];
+const testList = [];
+
 const addMorePrototypes = () => {
 	const fs = require('fs');
 	const path = require('path');
@@ -180,34 +194,44 @@ const addMorePrototypes = () => {
 
 	dirList.forEach(item => {
 		if (item.match(/^qtools/)) {
-			const moduleGen=require(path.join(libDir, item))
-			const module=new moduleGen({commonFunctions});
-			docList.push(
-				module.addToPrototype()
-			);
+			const moduleGen = require(path.join(libDir, item));
+			const module = new moduleGen({ commonFunctions });
+			const result = module.addToPrototype();
+			docList.push(result.documentation);
+			testList.push(result.test);
 		}
 	});
 };
 
 addMorePrototypes();
 
-const helpActual = commonFunctions => (queryString = '') => {
+const helpActual = docList => (queryString = '') => {
 	let outList;
 	if (!queryString) {
 		outList = docList;
 	} else {
 		outList = docList.filter(item => {
 			const regex = new RegExp(queryString, 'i');
-			const result=JSON.stringify(item).match(regex);
+			const result = JSON.stringify(item).match(regex);
 			return result;
 		});
 	}
-// 	const util=require('util');
-// 	util.inspect(docList, { depth: null, maxArrayLength: null }).qtDump('qtFuncionalLib Documentation');
-return outList;
+	// 	const util=require('util');
+	// 	util.inspect(docList, { depth: null, maxArrayLength: null }).qtDump('qtFuncionalLib Documentation');
+	return outList;
+};
 
+const testActual = testList => (args = {}) => {
+	const { logErrors = false } = args;
+	return testList.reduce((result, test) => {
+		if (typeof test == 'function') {
+			result = test({ logErrors }) && result;
+		}
+		return result;
+	}, true);
 };
 
 commonFunctions.help = helpActual(docList);
+commonFunctions.test = testActual(testList);
 module.exports = commonFunctions;
 
