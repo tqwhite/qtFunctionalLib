@@ -197,8 +197,8 @@ const addMorePrototypes = () => {
 			const moduleGen = require(path.join(libDir, item));
 			const module = new moduleGen({ commonFunctions });
 			const result = module.addToPrototype();
-			docList.push(result.documentation);
-			testList.push(result.test);
+			result.documentation && docList.push(result.documentation);
+			result.test && testList.push(result.test);
 		}
 	});
 };
